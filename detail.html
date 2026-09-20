@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Game Details - AKL Gaming HUB</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="detail.css">
+</head>
+<body data-theme="dark">
+<div id="detailApp">
+    <header class="detail-header">
+        <button class="back-btn" onclick="goBack()">← Back</button>
+        <div class="detail-title">Game Details</div>
+        <button id="themeToggleBtn" onclick="toggleTheme()" style="background:none; border:none; font-size:20px; cursor:pointer; padding:5px;">🌙</button>
+    </header>
+    
+    <main id="detailContent" class="detail-content">
+        <div class="detail-loading" style="text-align: center; padding: 40px;">
+            <div style="font-size: 32px; margin-bottom: 10px;">🎮</div>
+            <div>Loading game...</div>
+        </div>
+    </main>
+
+    <div style="margin: 12px 10px 0; padding: 14px; background: linear-gradient(135deg, #0088cc, #005f99); border-radius: 14px; text-align: center; color: #fff; box-shadow: 0 4px 15px rgba(0,136,204,0.3);">
+        <div style="font-size: 15px; font-weight: 850; margin-bottom: 4px;">📢 Join Our Telegram Channel</div>
+        <div style="font-size: 11px; opacity: 0.9; margin-bottom: 8px;">ဂိမ်းအသစ်တွေနဲ့ Update တွေကို စောစောစီးစီး သိရအောင် Telegram Channel မှာ Join ထားလိုက်ပါ။</div>
+        <a href="https://t.me/s/aklgamesharing" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #fff; color: #0088cc; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 850; text-decoration: none;">🔗 Join Channel Now</a>
+    </div>
+
+    <footer class="detail-footer-box" style="margin-top: 15px; padding: 15px 10px; text-align: center; font-size: 12px;">
+        <div style="margin-bottom: 6px; font-weight: 500;">© 2026 AKL GAMING HUB</div>
+        <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+            <a href="privacy.html" style="text-decoration: none;">PRIVACY POLICY</a>
+            <a href="dmca.html" style="text-decoration: none;">DMCA</a>
+            <a href="contact.html" style="text-decoration: none;">CONTACT</a>
+        </div>
+    </footer>
+</div>
+
+<script>
+// Theme ပြောင်းရန် function
+function toggleTheme() {
+    const body = document.body;
+    const btn = document.getElementById('themeToggleBtn');
+    const currentTheme = body.getAttribute('data-theme');
+    
+    if (currentTheme === 'dark') {
+        body.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        if (btn) btn.textContent = '☀️';
+    } else {
+        body.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        if (btn) btn.textContent = '🌙';
+    }
+}
+
+function goBack() {
+    if (document.referrer && document.referrer.indexOf(window.location.hostname) !== -1) {
+        history.back();
+    } else {
+        window.location.href = 'index.html';
+    }
+}
+
+async function loadGameDetail() {
+    const params = new URLSearchParams(window.location.search);
+    const gameId = params.get('id');
+
+    const contentDiv = document.getElementById('detailContent');
+
+    if (!gameId) {
+        contentDiv.innerHTML = `<div style="text-align:center; padding:40px; color:#ff5252;">❌ Game ID မရှိပါ။</div>`;
+        return;
+    }
+
+    try {
+        const response = await fetch('games.json');
+        if (!response.ok) throw new Error('Failed to load games.json');
+        const data = await response.json();
+
+        let allItems = [];
+        if (Array.isArray(data)) {
+            allItems = data;
+        } else if (typeof data === 'object' && data !== null) {
+            allItems = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+        }
+
+        const game = allItems.find(item => String(item.id).trim() === String(gameId).trim());
+
+        if (!game) {
+            contentDiv.innerHTML = `<div style="text-align:center; padding:40px; color:#ff5252;">❌ ရှာမတွေ့ပါ သို့မဟုတ် ဖျက်ထားသော ဂိမ်းဖြစ်ပါသည်။</div>`;
+            return;
+        }
+
+        document.title = (game.name || "Game Details") + " - AKL Gaming HUB";
+        renderGameDetails(game);
+
+    } catch (error) {
+        console.error("Detail load error:", error);
+        contentDiv.innerHTML = `<div style="text-align:center; padding:40px; color:#ff5252;">❌ ဒေတာများ ဆွဲထုတ်၍ မရပါ။ (games.json ကို စစ်ဆေးပါ)</div>`;
+    }
+}
+
+function renderGameDetails(game) {
+    const container = document.getElementById('detailContent');
+    const image = game.image || game.icon || "";
+    const name = game.name || "Unknown Game";
+    const description = game.description || "ဖော်ပြချက် မရှိသေးပါ။";
+    const downloadLink = game.downloadLink || game.link || "#";
+    const platform = game.platform || "General";
+    const size = game.size || "N/A";
+    const version = game.version || "Latest";
+    
+    let screenshotsHTML = '';
+    if (game.screenshots && Array.isArray(game.screenshots) && game.screenshots.length > 0) {
+        let ssCards = game.screenshots.map((imgUrl, idx) => `
+            <div class="screenshot-card">
+                <img src="${escapeHTML(imgUrl)}" alt="Screenshot ${idx + 1}" loading="lazy">
+                <div class="screenshot-number">${idx + 1}</div>
+            </div>
+        `).join('');
+
+        screenshotsHTML = `
+            <div class="detail-section">
+                <div class="screenshots-heading">
+                    <h3 class="detail-section-title" style="margin:0;">📸 Screenshots</h3>
+                    <span class="screenshot-count">${game.screenshots.length} Photos</span>
+                </div>
+                <div class="screenshots-scroll" style="margin-top: 10px;">
+                    ${ssCards}
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = `
+        <div class="game-detail-page">
+            <div class="detail-hero">
+                <div class="detail-cover">
+                    ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(name)}" class="detail-cover-image">` : `<div class="detail-cover-icon">🎮</div>`}
+                </div>
+                <div class="detail-title-area">
+                    <span class="detail-platform">🎮 ${escapeHTML(platform)}</span>
+                    <h1 class="detail-game-name">${escapeHTML(name)}</h1>
+                </div>
+
+                <div class="detail-info-grid">
+                    <div class="info-box">
+                        <span class="info-label">File Size</span>
+                        <strong>📦 ${escapeHTML(size)}</strong>
+                    </div>
+                    <div class="info-box">
+                        <span class="info-label">Version</span>
+                        <strong>📌 ${escapeHTML(version)}</strong>
+                    </div>
+                </div>
+            </div>
+
+            ${screenshotsHTML}
+
+            <div class="download-section">
+                <div class="download-section-header">
+                    <h2>Download Game</h2>
+                    <span>Get the latest version securely</span>
+                </div>
+                <div class="download-section-buttons">
+                    <a href="download.html?url=${encodeURIComponent(downloadLink)}" target="_blank" class="download-btn" style="text-decoration: none; display: block;">📥 Download Now (${escapeHTML(size)})</a>
+                </div>
+                <p class="download-note">⚡ Fast & secure download link provided.</p>
+            </div>
+
+            <div class="detail-section">
+                <h3 class="detail-section-title">📝 Description</h3>
+                <div class="description-box" style="white-space: pre-line;">${escapeHTML(description)}</div>
+            </div>
+        </div>
+    `;
+}
+
+function escapeHTML(value) {
+    if (value === null || value === undefined) return "";
+    return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+// Page စတင်ဖွင့်ချိန်တွင် LocalStorage က Theme ကို ဖတ်ယူပြီး သတ်မှတ်ပေးရန်
+window.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
+    
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) {
+        btn.textContent = (savedTheme === 'light') ? '🌙' : '☀️';
+    }
+    
+    loadGameDetail();
+});
+</script>
+</body>
+</html>

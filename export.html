@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKL Gaming HUB - Firebase Exporter</title>
+    <style>
+        body { background: #121212; color: #fff; font-family: sans-serif; text-align: center; padding: 40px; }
+        button { background: #00bcd4; color: #000; font-weight: bold; border: none; padding: 15px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 20px; }
+        #statusBox { margin-top: 20px; font-size: 14px; color: #ffeb3b; background: #1e1e2f; padding: 15px; border-radius: 8px; border: 1px solid #333; max-width: 500px; margin-left: auto; margin-right: auto; text-align: left; word-break: break-all; }
+    </style>
+</head>
+<body>
+
+    <h2>🔥 AKL Gaming HUB Firebase Exporter</h2>
+    <p style="color: #aaa;">Firebase Firestore ထဲရှိ ဂိမ်းဒေတာများကို games.json သို့ ထုတ်ယူမည်။</p>
+    
+    <button onclick="exportData()">🚀 ဒေတာများ ဆွဲထုတ်ပြီး games.json ဒေါင်းမည်</button>
+    
+    <div id="statusBox">အသင့်ဖြစ်ပါပြီ...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZv-a33YAuaD1VDWH2HbUXvVxCxIgN9k",
+            authDomain: "akl-gaming-hub-v2.firebaseapp.com",
+            projectId: "akl-gaming-hub-v2",
+            storageBucket: "akl-gaming-hub-v2.appspot.com",
+            messagingSenderId: "346718543772",
+            appId: "1:346718543772:web:9ee8b5d8f48a3b3d487259"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.exportData = async function() {
+            const statusBox = document.getElementById("statusBox");
+            statusBox.innerHTML = "⏳ Firebase ကို ချိတ်ဆက်နေပါပြီ...";
+
+            const possibleCollections = ["games", "items", "products", "posts", "data"];
+            let foundData = [];
+            let usedCol = "";
+
+            try {
+                for (let colName of possibleCollections) {
+                    const querySnapshot = await getDocs(collection(db, colName));
+                    if (!querySnapshot.empty) {
+                        usedCol = colName;
+                        querySnapshot.forEach((doc) => {
+                            foundData.push({ id: doc.id, ...doc.data() });
+                        });
+                        break;
+                    }
+                }
+
+                if (foundData.length === 0) {
+                    statusBox.innerHTML = "❌ Firebase ထဲတွင် ဒေတာ မတွေ့ပါ။ (Firestore Rules တွင် read ခွင့်ပြုထားခြင်း ရှိမရှိ စစ်ဆေးပါ)";
+                    return;
+                }
+
+                statusBox.innerHTML = `✅ <b>${usedCol}</b> ထဲမှ ဂိမ်း/အက်ပ် <b>${foundData.length}</b> ခု တွေ့ရှိပါသည်။ ဖိုင်တည်ဆောက်နေပါပြီ...`;
+
+                const jsonString = JSON.stringify(foundData, null, 2);
+                const blob = new Blob([jsonString], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'games.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                statusBox.innerHTML = `🎉 <b>အောင်မြင်ပါသည်!</b> <code>games.json</code> ကို ဒေါင်းလုဒ်ဆွဲပြီးပါပြီ။`;
+
+            } catch (error) {
+                console.error(error);
+                statusBox.innerHTML = `❌ Error: <span style="color:#ff5252;">${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
